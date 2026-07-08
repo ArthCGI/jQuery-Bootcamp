@@ -1,0 +1,317 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Registration Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══ Toast Notifications ════════════════════════════════ -->
+<div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ══ Custom Confirm Dialog (replaces window.confirm) ════ -->
+<div id="confirmOverlay" class="confirm-overlay" role="dialog" aria-modal="true">
+  <div class="confirm-box">
+    <div class="mb-3"><i class="fas fa-triangle-exclamation fa-2x text-warning"></i></div>
+    <p class="fw-semibold mb-4" id="confirmMessage">Are you sure?</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <button id="confirmCancelBtn" class="btn btn-secondary px-4">Cancel</button>
+      <button id="confirmOkBtn" class="btn btn-danger px-4">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Dashboard ══════════════════════════════════════════ -->
+<div class="container-fluid px-4 py-4">
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card d-flex align-items-center">
+        <div class="stat-icon bg-blue me-3"><i class="fas fa-users"></i></div>
+        <div>
+          <div class="stat-label">Total Employees</div>
+          <div class="stat-value" id="statTotal">0</div>
+          <small class="text-success fw-semibold" id="statRecent">+0 this month</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card d-flex align-items-center">
+        <div class="stat-icon bg-green me-3"><i class="fas fa-dollar-sign"></i></div>
+        <div>
+          <div class="stat-label">Total Salary</div>
+          <div class="stat-value" id="statTotalSalary">$0</div>
+          <small class="text-success fw-semibold">+8.5% this month</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card d-flex align-items-center">
+        <div class="stat-icon bg-orange me-3"><i class="fas fa-chart-line"></i></div>
+        <div>
+          <div class="stat-label">Average Salary</div>
+          <div class="stat-value" id="statAvgSalary">$0</div>
+          <small class="text-success fw-semibold">+4.3% this month</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card d-flex align-items-center">
+        <div class="stat-icon bg-purple me-3"><i class="fas fa-chart-pie"></i></div>
+        <div>
+          <div class="stat-label">Departments</div>
+          <div class="stat-value" id="statDepts">0</div>
+          <small class="text-muted">Active Departments</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Table + Form Row -->
+  <div class="row g-3 mb-4">
+
+    <!-- Employee Table -->
+    <div class="col-xl-8">
+      <div class="main-card">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <h5 class="mb-0 fw-bold">Employee List</h5>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+
+            <div class="search-wrapper">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="searchInput" class="form-control form-control-sm search-input"
+                     placeholder="Search employees..." autocomplete="off">
+            </div>
+
+            <select id="deptFilter" class="form-select form-select-sm" style="width:160px">
+              <option value="">All Departments</option>
+              <option>IT</option><option>HR</option><option>Finance</option>
+              <option>Marketing</option><option>Sales</option>
+            </select>
+
+            <button class="btn btn-primary btn-sm" id="exportCsvBtn">
+              <i class="fas fa-download me-1"></i>Export CSV
+            </button>
+
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                      data-bs-toggle="dropdown" type="button">Columns</button>
+              <ul class="dropdown-menu p-2" style="min-width:150px">
+                <li><label class="dropdown-item rounded d-flex gap-2">
+                  <input type="checkbox" class="col-toggle" data-col="2" checked> Name</label></li>
+                <li><label class="dropdown-item rounded d-flex gap-2">
+                  <input type="checkbox" class="col-toggle" data-col="3" checked> Email</label></li>
+                <li><label class="dropdown-item rounded d-flex gap-2">
+                  <input type="checkbox" class="col-toggle" data-col="4" checked> Department</label></li>
+                <li><label class="dropdown-item rounded d-flex gap-2">
+                  <input type="checkbox" class="col-toggle" data-col="5" checked> Salary</label></li>
+                <li><label class="dropdown-item rounded d-flex gap-2">
+                  <input type="checkbox" class="col-toggle" data-col="6" checked> Joining Date</label></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="employeeTable" class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Joining Date</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+          <small class="text-muted" id="paginationInfo"></small>
+          <div id="pagination"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Add Employee Form -->
+    <div class="col-xl-4">
+      <div class="main-card">
+        <h5 class="fw-bold mb-4">Add New Employee</h5>
+
+        <form id="employeeForm" novalidate autocomplete="off">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="empName">
+              Full Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" id="empName" class="form-control"
+                   placeholder="Enter full name" required>
+            <div class="invalid-feedback">Full name is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="empEmail">
+              Email <span class="text-danger">*</span>
+            </label>
+            <input type="email" id="empEmail" class="form-control"
+                   placeholder="Enter email address" required>
+            <div class="invalid-feedback">A valid email is required.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="empDept">
+              Department <span class="text-danger">*</span>
+            </label>
+            <select id="empDept" class="form-select" required>
+              <option value="">Select Department</option>
+              <option>IT</option><option>HR</option><option>Finance</option>
+              <option>Marketing</option><option>Sales</option>
+            </select>
+            <div class="invalid-feedback">Please select a department.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="empSalary">
+              Salary <span class="text-danger">*</span>
+            </label>
+            <input type="number" id="empSalary" class="form-control"
+                   placeholder="Enter salary" min="1" required>
+            <div class="invalid-feedback">A valid salary is required.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="empDate">
+              Joining Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" id="empDate" class="form-control" required>
+            <div class="invalid-feedback">Joining date is required.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success flex-grow-1">
+              <i class="fas fa-save me-1"></i>Save Employee
+            </button>
+            <button type="button" id="resetBtn" class="btn btn-outline-secondary">
+              <i class="fas fa-rotate me-1"></i>Reset
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Row -->
+  <div class="row g-3">
+
+    <div class="col-xl-4">
+      <div class="main-card h-100">
+        <h5 class="fw-bold mb-3">Recent Activities</h5>
+        <ul class="list-unstyled activity-list mb-0" id="activityList">
+          <li class="text-muted text-center py-3 fst-italic">No activities yet.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="main-card h-100 d-flex flex-column">
+        <h5 class="fw-bold mb-3">Department Distribution</h5>
+        <div class="d-flex align-items-center justify-content-center gap-4 flex-grow-1 py-2">
+          <canvas id="deptChart" width="160" height="160"
+                  style="max-width:160px;max-height:160px"></canvas>
+          <ul class="list-unstyled mb-0" id="chartLegend"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="main-card h-100">
+        <h5 class="fw-bold mb-3">Top Earners</h5>
+        <ul class="list-unstyled mb-0" id="topEarnersList">
+          <li class="text-muted text-center py-3 fst-italic">No data yet.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══ Edit Employee Modal ════════════════════════════════ -->
+<div class="modal fade" id="editModal" tabindex="-1"
+     aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title fw-bold" id="editModalLabel">Edit Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body pt-0">
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="editName">
+            Full Name <span class="text-danger">*</span></label>
+          <input type="text" id="editName" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="editEmail">
+            Email <span class="text-danger">*</span></label>
+          <input type="email" id="editEmail" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="editDept">
+            Department <span class="text-danger">*</span></label>
+          <select id="editDept" class="form-select">
+            <option value="">Select Department</option>
+            <option>IT</option><option>HR</option><option>Finance</option>
+            <option>Marketing</option><option>Sales</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="editSalary">
+            Salary <span class="text-danger">*</span></label>
+          <input type="number" id="editSalary" class="form-control" min="1">
+        </div>
+        <div class="mb-2">
+          <label class="form-label fw-semibold" for="editDate">
+            Joining Date <span class="text-danger">*</span></label>
+          <input type="date" id="editDate" class="form-control">
+        </div>
+      </div>
+
+      <div class="modal-footer border-top-0">
+        <button class="btn btn-success" id="saveEditBtn">
+          <i class="fas fa-save me-1"></i>Update Employee
+        </button>
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
